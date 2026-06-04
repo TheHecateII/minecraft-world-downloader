@@ -62,7 +62,7 @@ public abstract class Entity extends PrimitiveEntity implements IMovableEntity {
             root.add("UUIDLeast", new LongTag(uuid.getLower()));
             root.add("UUIDMost", new LongTag(uuid.getUpper()));
         }
-        root.add("id", new StringTag(typeName));
+        root.add("id", new StringTag(typeName != null ? typeName : "minecraft:pig"));
 
         List<FloatTag> pos = Arrays.asList(new FloatTag(angleToRotation(yaw)), new FloatTag(angleToRotation(pitch)));
         root.add("Rotation", new ListTag(ListTag.TAG_FLOAT, pos));

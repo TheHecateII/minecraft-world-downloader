@@ -22,6 +22,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import game.data.chunk.palette.ModdedBlockColorExtractor;
 import packets.builder.PacketBuilder;
 import proxy.ConnectionDetails;
 import proxy.ConnectionManager;
@@ -319,6 +320,9 @@ public class Config {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        // Pre-scan mod JARs in the background so texture colors are ready when chunks arrive.
+        ModdedBlockColorExtractor.getInstance().preloadAsync();
     }
 
     private boolean writeChunks() {

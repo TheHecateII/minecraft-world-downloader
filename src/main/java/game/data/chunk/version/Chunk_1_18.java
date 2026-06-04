@@ -142,7 +142,7 @@ public class Chunk_1_18 extends Chunk_1_17 {
                 for (int x = 0; x < 16; x++) {
                     BlockState state = globalPalette.getState(section.getNumericBlockStateAt(x, y, z));
 
-                    if (blockEntities.isBlockEntity(state.getName())) {
+                    if (state != null && blockEntities.isBlockEntity(state.getName())) {
                         Coordinate3D coords = new Coordinate3D(x, y, z).sectionLocalToGlobal(sectionY, this.location);
                         this.addBlockEntity(coords, this.generateBlockEntity(state.getName(), coords));
                     }

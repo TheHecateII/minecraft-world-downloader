@@ -138,11 +138,9 @@ public abstract class ChunkEntities extends ChunkEvents {
 
 
     public void addBlockEntity(Coordinate3D location, SpecificTag tag) {
-        // we shouldn't reach this state, but just in case we do
-        if (tag.tagType() == Tag.TAG_END) {
+        if (!(tag instanceof CompoundTag entity)) {
             return;
         }
-        CompoundTag entity = (CompoundTag) tag;
 
         // validate entity identifer
         if (!entity.get("id").isError()) {

@@ -24,6 +24,7 @@ public class UdpProxy {
 
     // One outbound socket per client address, so the server can send responses back to us.
     private final Map<SocketAddress, DatagramSocket> sessions = new ConcurrentHashMap<>();
+    private volatile boolean receivedFirst = false;
 
     public UdpProxy(String remoteHost, int remotePort, int localPort) {
         this.remoteHost = remoteHost;
@@ -34,14 +35,16 @@ public class UdpProxy {
     public void start() throws SocketException {
         listenSocket = new DatagramSocket(null);
         listenSocket.setReuseAddress(true);
-        listenSocket.bind(new InetSocketAddress("127.0.0.1", localPort));
+        // Bind to all interfaces (0.0.0.0) so we catch both IPv4 127.0.0.1
+        // and any localhost alias the voice mod client might resolve.
+        listenSocket.bind(new InetSocketAddress(localPort));
         running = true;
 
         Thread t = new Thread(this::listenFromClient, "voice-udp-proxy-in-" + localPort);
         t.setDaemon(true);
         t.start();
 
-        System.out.println("[VoiceProxy] UDP proxy started: 127.0.0.1:" + localPort + " -> " + remoteHost + ":" + remotePort);
+        System.out.println("[VoiceProxy] UDP proxy started: 0.0.0.0:" + localPort + " -> " + remoteHost + ":" + remotePort);
     }
 
     private void listenFromClient() {
@@ -60,6 +63,10 @@ public class UdpProxy {
                 listenSocket.receive(pkt);
 
                 SocketAddress clientAddr = pkt.getSocketAddress();
+                if (!receivedFirst) {
+                    receivedFirst = true;
+                    System.out.println("[VoiceProxy] First UDP packet received on port " + localPort + " from " + clientAddr);
+                }
                 DatagramSocket session = sessions.computeIfAbsent(clientAddr, addr -> {
                     try {
                         DatagramSocket s = new DatagramSocket();

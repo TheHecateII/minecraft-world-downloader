@@ -47,19 +47,59 @@ public class BlockColors {
 
         // handle stairs & slabs, the original block can have various different name structures
         String suffix = key.endsWith("_slab") ? "_slab" : key.endsWith("_stairs") ? "_stairs" : null;
-        if (suffix == null) { return SimpleColor.BLACK; }
+        if (suffix != null) {
+            col = colors.get(key.replace(suffix, ""));
+            if (col != null) { return col; }
 
-        col = colors.get(key.replace(suffix, ""));
-        if (col != null) { return col; }
+            col = colors.get(key.replace(suffix, "_block"));
+            if (col != null) { return col; }
 
-        col = colors.get(key.replace(suffix, "_block"));
-        if (col != null) { return col; }
+            col = colors.get(key.replace(suffix, "_planks"));
+            if (col != null) { return col; }
 
-        col = colors.get(key.replace(suffix, "_planks"));
-        if (col != null) { return col; }
+            col = colors.get(key.replace(suffix, "s"));
+            if (col != null) { return col; }
+        }
 
-        col = colors.get(key.replace(suffix, "s"));
-        if (col != null) { return col; }
+        // handle walls — inherit base block color (brick_wall → bricks, stone_wall → stone, …)
+        if (key.endsWith("_wall")) {
+            String base = key.replace("_wall", "");
+            col = colors.get(base);
+            if (col != null) return col;
+            col = colors.get(base + "s");          // brick_wall → bricks
+            if (col != null) return col;
+            col = colors.get(base + "_block");
+            if (col != null) return col;
+        }
+
+        // handle fence gates — inherit from the plank/log color
+        if (key.endsWith("_fence_gate")) {
+            String base = key.replace("_fence_gate", "");
+            col = colors.get(base + "_planks");
+            if (col != null) return col;
+            col = colors.get(base + "_log");
+            if (col != null) return col;
+            col = colors.get(base);
+            if (col != null) return col;
+        }
+
+        // handle fences — same as fence gates
+        if (key.endsWith("_fence") && !key.endsWith("nether_brick_fence")) {
+            String base = key.replace("_fence", "");
+            col = colors.get(base + "_planks");
+            if (col != null) return col;
+            col = colors.get(base + "_log");
+            if (col != null) return col;
+        }
+
+        // For modded (non-minecraft) blocks not in the vanilla palette, generate a
+        // deterministic color so they appear on the map.
+        // Vanilla minecraft blocks that are not in the palette remain transparent (BLACK):
+        // they are decorative/structural blocks (glass, beds, fences, torches, etc.)
+        // and the surface scanner should see through them to the ground below.
+        if (key.contains(":") && !key.startsWith("minecraft:") && !key.endsWith("air")) {
+            return ModdedBlockColorExtractor.getInstance().getColor(key);
+        }
 
         return SimpleColor.BLACK;
     }

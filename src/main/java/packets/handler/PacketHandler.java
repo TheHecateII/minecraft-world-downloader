@@ -17,6 +17,7 @@ public abstract class PacketHandler {
 
     protected static Protocol protocol = new HandshakeProtocol();
 
+
     public static void setProtocol(Protocol protocol) {
         PacketHandler.protocol = protocol;
     }

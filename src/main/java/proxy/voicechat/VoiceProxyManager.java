@@ -85,14 +85,13 @@ public class VoiceProxyManager {
 
             String remoteHost = resolveVoiceHost(host);
             startProxy(remoteHost, port);
+            System.out.println("[VoiceProxy] SVC player_state — port=" + port + " → " + remoteHost);
 
             if (!host.isEmpty() && !isLocalhost(host)) {
-                // The packet names a specific external host. Rewrite it so the client uses localhost
-                // (= our UDP proxy) instead of trying to reach the external host directly.
                 PacketBuilder modified = buildCustomPayload(channel, b -> {
                     b.writeLong(secretMsb);
                     b.writeLong(secretLsb);
-                    b.writeString("");   // empty → client uses Minecraft connection address = localhost
+                    b.writeString("");
                     b.writeInt(port);
                     b.writeByteArray(tail);
                 });
@@ -103,7 +102,7 @@ public class VoiceProxyManager {
             return true;
 
         } catch (Exception e) {
-            System.err.println("[VoiceProxy] Failed to parse SimpleVoiceChat player_state: " + e.getMessage());
+            System.err.println("[VoiceProxy] Failed to parse SVC player_state: " + e.getMessage());
             return true;
         }
     }
@@ -131,25 +130,41 @@ public class VoiceProxyManager {
         try {
             int typeId = provider.readVarInt();
 
-            if (typeId != PV2_SERVER_INFO_ID) {
+            // Only handle the server-connection packet (typeId=0x01 in PV2 2.x).
+            if (typeId != 0x01) {
                 return true;
             }
 
-            long tokenMsb = provider.readLong();
-            long tokenLsb = provider.readLong();
-            String host   = provider.readString();
-            int port      = provider.readInt();
-            byte[] tail   = provider.readByteArray(provider.remaining());
+            // PV2 2.x wire format after typeId:
+            //   UUID   secret     (16 bytes = 2 longs)
+            //   byte   unknown    (1 byte — version/online flag, not used here)
+            //   String ip         ("0.0.0.0" = use server address, or real IP)
+            //   int    port
+            //   …      tail       (codec settings, etc. — copied verbatim)
+            if (provider.remaining() < 22) {
+                return true;
+            }
 
-            String remoteHost = resolveVoiceHost(host);
+            long secretMsb = provider.readLong();
+            long secretLsb = provider.readLong();
+            byte unknown   = provider.readNext();
+            String host    = provider.readString();
+            int port       = provider.readInt();
+            byte[] tail    = provider.readByteArray(provider.remaining());
+
+            // "0.0.0.0" means "use the server's own address" — treat as empty.
+            boolean useServerAddr = host.isEmpty() || host.equals("0.0.0.0");
+            String remoteHost = useServerAddr ? Config.getConnectionDetails().getHost() : host;
             startProxy(remoteHost, port);
+            System.out.println("[VoiceProxy] PlasmoVoice server info — ip='" + host + "' port=" + port + " → " + remoteHost);
 
-            if (!host.isEmpty() && !isLocalhost(host)) {
+            if (!useServerAddr && !isLocalhost(host)) {
                 PacketBuilder modified = buildCustomPayload(channel, b -> {
                     b.writeVarInt(typeId);
-                    b.writeLong(tokenMsb);
-                    b.writeLong(tokenLsb);
-                    b.writeString("");
+                    b.writeLong(secretMsb);
+                    b.writeLong(secretLsb);
+                    b.writeByte(unknown);
+                    b.writeString("0.0.0.0");
                     b.writeInt(port);
                     b.writeByteArray(tail);
                 });
@@ -198,6 +213,7 @@ public class VoiceProxyManager {
     private boolean isLocalhost(String host) {
         return host.equals("localhost") || host.equals("127.0.0.1") || host.equals("::1");
     }
+
 
     /** Stop all active UDP proxies (called on disconnect). */
     public void reset() {

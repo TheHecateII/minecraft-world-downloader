@@ -12,9 +12,13 @@ public abstract class PluginChannelHandler {
 
     public static PluginChannelHandler getInstance() {
         if (instance == null) {
+            // V1_13+ uses namespaced channels (namespace:path) — voice mods need DefaultPluginChannelHandler.
+            // V1_12 uses legacy channel names like "FML|HS" — needs PluginChannelHandler1_12.
+            // Order matters: most-specific version first.
             instance = Config.versionReporter().select(PluginChannelHandler.class,
+                   Option.of(Version.V1_13, DefaultPluginChannelHandler::new),
                    Option.of(Version.V1_12, PluginChannelHandler1_12::new),
-                   Option.of(Version.ANY, DefaultPluginChannelHandler::new)
+                   Option.of(Version.ANY,   DefaultPluginChannelHandler::new)
             );
         }
         return instance;

@@ -83,6 +83,10 @@ public class SimpleColor {
         return (int) Math.round(Math.max(Math.min(255, v), 0));
     }
 
+    public double getR() { return r; }
+    public double getG() { return g; }
+    public double getB() { return b; }
+
     @Override
     public String toString() {
         return "SimpleColor{" +

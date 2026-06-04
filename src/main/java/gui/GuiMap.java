@@ -354,8 +354,9 @@ public class GuiMap {
     }
 
     /**
-     * Draw another player on the map. If the cursor is nearby (max 10 pixels away), draw the name of the player.
-     * If the name of the player is not known it's first requested from the Mojang API.
+     * Draw another player on the map using their skin head (from Crafatar).
+     * Falls back to a coloured dot while the image is loading.
+     * Shows the player name when the cursor is nearby.
      */
     private void drawOtherPlayer(GraphicsContext graphics, PlayerEntity player) {
         if (player.getPosition() == null) {
@@ -364,20 +365,31 @@ public class GuiMap {
 
         double playerX = ((player.getPosition().getX() - bounds.getMinX()) / blocksPerPixel);
         double playerZ = ((player.getPosition().getZ() - bounds.getMinZ()) / blocksPerPixel);
-        if (mouseOver && isNear(playerX, playerZ)) {
+
+        Image skin = player.getSkinImage();
+        if (skin != null) {
+            // White 1-px border
             graphics.setFill(Color.WHITE);
-
-            if (player.getName() != null) {
-                graphics.strokeText(player.getName(), playerX, playerZ - 5);
-                graphics.fillText(player.getName(), playerX, playerZ - 5);
-            }
+            graphics.fillRect(playerX - 9, playerZ - 9, 18, 18);
+            // Face layer:  skin pixels (8,8)–(15,15) → 16×16
+            graphics.drawImage(skin, 8, 8, 8, 8, playerX - 8, playerZ - 8, 16, 16);
+            // Hat overlay: skin pixels (40,8)–(47,15) → 16×16 (on top)
+            graphics.drawImage(skin, 40, 8, 8, 8, playerX - 8, playerZ - 8, 16, 16);
         } else {
+            // Fallback dot while skin is loading
             graphics.setFill(PLAYER_COLOR);
+            graphics.setStroke(Color.BLACK);
+            graphics.strokeOval(playerX - 3, playerZ - 3, 6, 6);
+            graphics.fillOval(playerX - 3, playerZ - 3, 6, 6);
         }
-        graphics.setStroke(Color.BLACK);
 
-        graphics.strokeOval(playerX - 3, playerZ - 3, 6, 6);
-        graphics.fillOval(playerX - 3, playerZ - 3, 6, 6);
+        // Name tooltip on hover
+        if (mouseOver && isNear(playerX, playerZ) && player.getName() != null) {
+            graphics.setFill(Color.WHITE);
+            graphics.setStroke(Color.BLACK);
+            graphics.strokeText(player.getName(), playerX, playerZ - 11);
+            graphics.fillText(player.getName(), playerX, playerZ - 11);
+        }
     }
 
     private boolean isNear(double x, double y) {

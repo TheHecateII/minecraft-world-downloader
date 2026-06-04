@@ -33,7 +33,8 @@ public class Slot {
 
     public CompoundTag toNbt() {
         CompoundTag tag = new CompoundTag();
-        tag.add("id", new StringTag(RegistryManager.getInstance().getItemRegistry().getItemName(itemId)));
+        String itemName = RegistryManager.getInstance().getItemRegistry().getItemName(itemId);
+        tag.add("id", new StringTag(itemName != null ? itemName : "minecraft:air"));
         tag.add("Count", new ByteTag(count));
 
         if (nbt instanceof CompoundTag) {
