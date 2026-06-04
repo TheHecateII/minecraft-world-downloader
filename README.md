@@ -1,7 +1,9 @@
 # minecraft-world-downloader
-A Minecraft world downloader that works as a proxy server between the client and the server to read & save chunk data. Download multiplayer worlds by connecting to them and walking around. Chunks can be sent back to the client to extend the render distance.
 
-This fork adds support for **modded servers** (NeoForge/Forge/Fabric), **voice chat mods** (PlasmoVoice, Simple Voice Chat), and various fixes for 1.21+ servers.
+> This is an updated fork of [mircokroon/minecraft-world-downloader](https://github.com/mircokroon/minecraft-world-downloader).
+> It adds support for modded servers (NeoForge/Forge/Fabric), voice chat mods (PlasmoVoice, Simple Voice Chat) and includes several fixes for Minecraft 1.21+ servers.
+
+A Minecraft world downloader that works as a proxy server between the client and the server to read & save chunk data. Download multiplayer worlds by connecting to them and walking around. Chunks can be sent back to the client to extend the render distance.
 
 ---
 
