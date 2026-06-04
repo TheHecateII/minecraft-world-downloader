@@ -15,11 +15,13 @@ public class PluginChannelHandler1_12 extends PluginChannelHandler {
     }
 
     @Override
-    public void handleCustomPayload(DataTypeProvider provider) {
+    public boolean handleCustomPayload(DataTypeProvider provider) {
         String channel = provider.readString();
 
         if (channel.equals(FORGE_CHANNEL)) {
             this.operators.computeIfAbsent(channel, s -> new ForgeRegistryHandler()).apply(provider);
         }
+
+        return true;
     }
 }

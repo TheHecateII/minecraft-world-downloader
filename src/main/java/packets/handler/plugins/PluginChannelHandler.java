@@ -4,6 +4,7 @@ import config.Config;
 import config.Option;
 import config.Version;
 import packets.DataTypeProvider;
+import proxy.voicechat.VoiceProxyManager;
 
 public abstract class PluginChannelHandler {
 
@@ -19,10 +20,23 @@ public abstract class PluginChannelHandler {
         return instance;
     }
 
-    public abstract void handleCustomPayload(DataTypeProvider provider);
+    /**
+     * Handle an incoming CustomPayload packet from the server.
+     *
+     * @return true  → the original packet should be forwarded to the client unchanged
+     *         false → the original packet should be dropped (a replacement may have been injected)
+     */
+    public abstract boolean handleCustomPayload(DataTypeProvider provider);
+
+    public static void reset() {
+        instance = null;
+    }
 }
 
 class DefaultPluginChannelHandler extends PluginChannelHandler {
     @Override
-    public void handleCustomPayload(DataTypeProvider provider) { }
+    public boolean handleCustomPayload(DataTypeProvider provider) {
+        String channel = provider.readString();
+        return VoiceProxyManager.getInstance().handleChannel(channel, provider);
+    }
 }
