@@ -1,108 +1,119 @@
 # minecraft-world-downloader
 A Minecraft world downloader that works as a proxy server between the client and the server to read & save chunk data. Download multiplayer worlds by connecting to them and walking around. Chunks can be sent back to the client to extend the render distance.
 
+This fork adds support for **modded servers** (NeoForge/Forge/Fabric), **voice chat mods** (PlasmoVoice, Simple Voice Chat), and various fixes for 1.21+ servers.
+
+---
 
 ### Downloads  <a href="https://github.com/mircokroon/minecraft-world-downloader/releases/latest"><img align="right" src="https://img.shields.io/github/downloads/mircokroon/minecraft-world-downloader/total.svg"></a>
-Windows launcher: [world-downloader-launcher.exe](https://github.com/mircokroon/minecraft-world-downloader-launcher/releases/latest/download/world-downloader-launcher.exe)
+Latest cross-platform jar: [world-downloader.jar](https://github.com/mircokroon/minecraft-world-downloader/releases/latest/download/world-downloader.jar)
 
-Latest cross-platform jar (command-line support): [world-downloader.jar](https://github.com/mircokroon/minecraft-world-downloader/releases/latest/download/world-downloader.jar)
+---
 
 ### Basic usage
-[Download](https://github.com/mircokroon/minecraft-world-downloader-launcher/releases/latest/download/world-downloader-launcher.exe) the latest release and run it. Enter the server address in the address field and press start.
+Run the jar and enter the server address. Instead of connecting to the server directly, connect to `localhost` in Minecraft.
 
-<img src="https://i.imgur.com/yH8SH5C.png">
+```
+java -jar world-downloader.jar -s your.server.address
+```
 
-Instead of connecting to the server itself, connect to `localhost` in Minecraft to start downloading the world.
-<img src="https://i.imgur.com/wKMnXfq.png">
+---
 
-If you run into any problems, check the [FAQ](https://github.com/mircokroon/minecraft-world-downloader/wiki/FAQ) page for some common issues. 
+### Features
 
-### [Features](https://github.com/mircokroon/minecraft-world-downloader/wiki/Features)
-- Requires no client modifications and as such works with every game client, vanilla or not
-- Automatically merge into previous downloads or existing worlds
-- Save chests and other inventories by opening them
-- Extend the client's render distance by sending chunks downloaded previously back to the client
-- Overview map of chunks that have been saved:
+#### Core (upstream)
+- Works with any client — vanilla, Fabric, Forge, NeoForge
+- Automatically merges into previous downloads or existing worlds
+- Save chests and inventories by opening them
+- Extend render distance by sending previously downloaded chunks back to the client
+- Overview map of downloaded chunks
 
-<img src="https://i.imgur.com/7FIJ6fZ.png" width="80%" title="Example of the GUI showing all the downloaded chunks as white squares, which ones from a previous download greyed out.">
+#### Added in this fork
+
+**Voice chat support**
+- Transparent UDP proxy for **PlasmoVoice** and **Simple Voice Chat**
+- Port detected automatically from server plugin channel packets — no configuration needed
+- Works with any UDP port (including custom configs like sharing port 25565)
+- IPv4 and IPv6 loopback both supported
+
+**Modded block rendering on the map**
+- Modded blocks (non-`minecraft:` namespace) are visible on the overview map
+- Colors extracted from mod JAR texture files when available, deterministic hash color as fallback
+- Fallback chain for vanilla block variants: `_wall`, `_fence_gate`, `_fence` inherit base block color
+- 1.20+ blocks added to palette: `short_grass`, `tall_grass`, `fern`, all flowers, `pink_petals`, `wildflowers`, etc.
+
+**Player heads on the map**
+- Other players shown as their Minecraft skin head instead of a dot
+- Loads directly from Mojang's texture CDN (`textures.minecraft.net`) — fast and no third-party dependency
+- **Disk cache** (`cache/heads/`) — second session loads are < 2 ms, no re-download
+- Hat/outer layer overlay included
+- Falls back to a colored dot while loading
+
+**Bug fixes for 1.21 / NeoForge**
+- Microsoft OAuth `invalid_grant` fixed (auth code parsed correctly)
+- `CustomPayload` packet (ID `0x19`) added to protocol definitions for 1.20.6 and 1.21
+- `PluginChannelHandler` version selection fixed so namespaced channels are processed on 1.13+
+- NPE in chunk parsing when modded block states are absent from the global palette
+- `ClassCastException` / `StringTag(null)` on block entities and item slots with unknown IDs
+- `PlayerEntity.incrementPosition` NPE when relative position arrives before absolute position
+
+---
 
 ### Requirements
 - Java 21 or higher
-- Minecraft version 1.12.2+ // 1.13.2+ // 1.14.1+ // 1.15.2+ // 1.16.2+ // 1.17+ // 1.18+ // 1.19.3+ // 1.20+ // 1.21+
+- Minecraft 1.12.2 / 1.13.2 / 1.14.4 / 1.15.2 / 1.16.2 / 1.17 / 1.18 / 1.19.3 / 1.20+ / 1.21+
 
-### Command-line
-[Download](https://github.com/mircokroon/minecraft-world-downloader/releases/latest/download/world-downloader.jar) the cross-platform `world-downloader.jar` and run it using the command-line:
+---
 
-```
-java -jar world-downloader.jar
-```
+### Planned features
 
-Arguments can be specified to change the behaviour of the downloader. Running with `--help` shows all the available commands.
-```
-java -jar world-downloader.jar --help
-```
+- [ ] Block color extraction from the vanilla Minecraft JAR (no more missing palette entries after updates)
+- [ ] Automatic head image refresh when a player changes their skin mid-session
+- [ ] Configurable UDP proxy port range for voice mods
+- [ ] Map legend / layer toggle (show/hide players, markers, etc.)
+- [ ] Support for Minecraft 1.21.2+ protocol changes
 
-The GUI can be disabled by including the `--no-gui` option, and specifying the server address:
-```
-java -jar world-downloader.jar --no-gui -s address.to.server.com
-```
-
-### Running on Linux
-To easily download the latest release using the terminal, the following commands can be used:
-```
-wget https://github.com/mircokroon/minecraft-world-downloader/releases/latest/download/world-downloader.jar
-java -jar world-downloader.jar -s address.to.server.com
-```
-
-When running headless Java, the GUI should be disabled by including the GUI option:
-```
-java -jar world-downloader.jar -s address.to.server.com --no-gui
-```
-
-Some linux distributions may require `-Djdk.gtk.version=2` for the GUI to work:
-```
-java -Djdk.gtk.version=2 -jar world-downloader.jar
-```
-
+---
 
 ### Building from source
-<details>
-  <summary>Dependencies on linux</summary>
-  
-  ### debian/ubuntu
-  
-  ```
-  sudo apt-get install default-jdk maven
-  ```
 
-  ### arch/manjaro
-  
-  ```
-  sudo pacman -S --needed jdk-openjdk maven
-  ```
-</details>
+**Windows (with Scoop):**
+```powershell
+scoop install temurin21-jdk maven
+git clone <this-repo>
+cd minecraft-world-downloader
+mvn package
+java -jar target/world-downloader.jar -s your.server.address
+```
 
-<details>
-  <summary>Build project to executable jar file</summary>
-  
- Building the project manually can be done using Maven:
-  ```
-  git clone https://github.com/mircokroon/minecraft-world-downloader
-  cd minecraft-world-downloader
-  mvn package
-  java -jar ./target/world-downloader.jar -s address.to.server.com
-  ```
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt-get install default-jdk maven
+git clone <this-repo>
+cd minecraft-world-downloader
+mvn package
+java -jar target/world-downloader.jar -s your.server.address
+```
 
-</details>
+**Linux (Arch/Manjaro):**
+```bash
+sudo pacman -S --needed jdk-openjdk maven
+```
+
+---
+
+### Command-line options
+
+| Option | Description |
+|---|---|
+| `-s <address>` | Remote server address |
+| `-l <port>` | Local proxy port (default: 25565) |
+| `-o <dir>` | World output directory (default: `world`) |
+| `-r <distance>` | Extended render distance (chunks) |
+| `--no-gui` | Disable the GUI (requires `-s`) |
+| `--help` | Show all options |
+
+---
 
 ### Contact
-<details>
-  <summary>Contact information</summary>
-
-  For problems, bugs, feature requests and questions about how to use the application, please [open an issue](https://github.com/mircokroon/minecraft-world-downloader/issues/new/choose) or discussion on GitHub. 
-
-  For other inquiries, email: mircokroon.github@gmail.com
-  
-  If you want to support this project, you can [donate through GitHub](https://github.com/sponsors/mircokroon?frequency=one-time&amount=5)
-</details>
-
+For bugs, feature requests or questions, please [open an issue](https://github.com/mircokroon/minecraft-world-downloader/issues/new/choose) on GitHub.
